@@ -117,7 +117,7 @@ static const struct fx2lafw_profile supported_fx2[] = {
 	 */
 	{ 0x04b4, 0x00f3, "Cypress", "SuperSpeed Explorer Kit", NULL,
 		"fx3lafw-cypress-fx3.fw",
-		DEV_CAPS_FX3 | DEV_CAPS_16BIT, NULL, NULL },
+		DEV_CAPS_FX3 | DEV_CAPS_32BIT, NULL, NULL },
 
 	ALL_ZERO
 };
@@ -323,6 +323,36 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 		sdi->version = g_strdup(prof->model_version);
 		sdi->serial_num = g_strdup(serial_num);
 		sdi->connection_id = g_strdup(connection_id);
+
+		/* Fill in channellist according to this device's profile. */
+		num_logic_channels =
+			prof->dev_caps & DEV_CAPS_32BIT ? 32 :
+			(prof->dev_caps & DEV_CAPS_24BIT ? 24 :
+			 (prof->dev_caps & DEV_CAPS_16BIT ? 16 : 8));
+		num_analog_channels = prof->dev_caps & DEV_CAPS_AX_ANALOG ? 1 : 0;
+
+		/* Logic channels, all in one channel group. */
+		cg = g_malloc0(sizeof(struct sr_channel_group));
+		cg->name = g_strdup("Logic");
+		for (j = 0; j < num_logic_channels; j++) {
+			sprintf(channel_name, "D%d", j);
+			ch = sr_channel_new(sdi, j, SR_CHANNEL_LOGIC,
+						TRUE, channel_name);
+			cg->channels = g_slist_append(cg->channels, ch);
+		}
+		sdi->channel_groups = g_slist_append(NULL, cg);
+
+		for (j = 0; j < num_analog_channels; j++) {
+			snprintf(channel_name, 16, "A%d", j);
+			ch = sr_channel_new(sdi, j + num_logic_channels,
+					SR_CHANNEL_ANALOG, TRUE, channel_name);
+
+			/* Every analog channel gets its own channel group. */
+			cg = g_malloc0(sizeof(struct sr_channel_group));
+			cg->name = g_strdup(channel_name);
+			cg->channels = g_slist_append(NULL, ch);
+			sdi->channel_groups = g_slist_append(sdi->channel_groups, cg);
+		}
 
 		devc = fx2lafw_dev_new();
 		devc->profile = prof;
