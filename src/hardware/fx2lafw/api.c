@@ -424,10 +424,11 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 			sdi->inst_type = SR_INST_USB;
 			sdi->conn = sr_usb_dev_inst_new(libusb_get_bus_number(devlist[i]),
 					libusb_get_device_address(devlist[i]), NULL);
+		} else if ((prof->dev_caps & DEV_CAPS_FX3) != 0){
+			sr_err("We don't support uploading firmware to FX3 device");
 		} else {
 			if (ezusb_upload_firmware(drvc->sr_ctx, devlist[i],
-					USB_CONFIGURATION, prof->firmware,
-					(prof->dev_caps & DEV_CAPS_FX3) != 0) == SR_OK) {
+					USB_CONFIGURATION, prof->firmware) == SR_OK) {
 				/* Store when this device's FW was updated. */
 				devc->fw_updated = g_get_monotonic_time();
 			} else {
