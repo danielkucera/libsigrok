@@ -330,35 +330,6 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 		sdi->serial_num = g_strdup(serial_num);
 		sdi->connection_id = g_strdup(connection_id);
 
-		/* Fill in channellist according to this device's profile. */
-		num_logic_channels =
-			prof->dev_caps & DEV_CAPS_32BIT ? 32 :
-			(prof->dev_caps & DEV_CAPS_24BIT ? 24 :
-			 (prof->dev_caps & DEV_CAPS_16BIT ? 16 : 8));
-		num_analog_channels = prof->dev_caps & DEV_CAPS_AX_ANALOG ? 1 : 0;
-
-		/* Logic channels, all in one channel group. */
-		cg = g_malloc0(sizeof(struct sr_channel_group));
-		cg->name = g_strdup("Logic");
-		for (j = 0; j < num_logic_channels; j++) {
-			sprintf(channel_name, "D%d", j);
-			ch = sr_channel_new(sdi, j, SR_CHANNEL_LOGIC,
-						TRUE, channel_name);
-			cg->channels = g_slist_append(cg->channels, ch);
-		}
-		sdi->channel_groups = g_slist_append(NULL, cg);
-
-		for (j = 0; j < num_analog_channels; j++) {
-			snprintf(channel_name, 16, "A%d", j);
-			ch = sr_channel_new(sdi, j + num_logic_channels,
-					SR_CHANNEL_ANALOG, TRUE, channel_name);
-
-			/* Every analog channel gets its own channel group. */
-			cg = g_malloc0(sizeof(struct sr_channel_group));
-			cg->name = g_strdup(channel_name);
-			cg->channels = g_slist_append(NULL, ch);
-			sdi->channel_groups = g_slist_append(sdi->channel_groups, cg);
-		}
 
 		devc = fx2lafw_dev_new();
 		devc->profile = prof;
@@ -386,36 +357,44 @@ static GSList *scan(struct sr_dev_driver *di, GSList *options)
 		 * logic probes. The use case which motivated the config
 		 * key is protocol decoders, which are logic only.
 		 */
-		ch_max = num_logic_channels;
-		devc->channel_names = sr_parse_probe_names(probe_names,
-			channel_names_logic, ch_max, ch_max, &ch_max);
-		ch_idx = 0;
+		/* Fill in channellist according to this device's profile. */
+		num_logic_channels =
+			prof->dev_caps & DEV_CAPS_32BIT ? 32 :
+			(prof->dev_caps & DEV_CAPS_24BIT ? 24 :
+			 (prof->dev_caps & DEV_CAPS_16BIT ? 16 : 8));
+		num_analog_channels = prof->dev_caps & DEV_CAPS_AX_ANALOG ? 1 : 0;
 
 		/* Logic channels, all in one channel group. */
-		cg = sr_channel_group_new(sdi, "Logic", NULL);
+		cg = g_malloc0(sizeof(struct sr_channel_group));
+		cg->name = g_strdup("Logic");
+		channel_name = malloc(64);
 		for (j = 0; j < num_logic_channels; j++) {
-			channel_name = devc->channel_names[j];
-			ch = sr_channel_new(sdi, ch_idx++, SR_CHANNEL_LOGIC,
-				TRUE, channel_name);
+			sprintf(channel_name, "D%d", j);
+			ch = sr_channel_new(sdi, j, SR_CHANNEL_LOGIC,
+						TRUE, channel_name);
 			cg->channels = g_slist_append(cg->channels, ch);
 		}
+		sdi->channel_groups = g_slist_append(NULL, cg);
 
 		for (j = 0; j < num_analog_channels; j++) {
-			channel_name = channel_names_analog[j];
-			ch = sr_channel_new(sdi, ch_idx++, SR_CHANNEL_ANALOG,
-				TRUE, channel_name);
+			snprintf(channel_name, 16, "A%d", j);
+			ch = sr_channel_new(sdi, j + num_logic_channels,
+					SR_CHANNEL_ANALOG, TRUE, channel_name);
 
 			/* Every analog channel gets its own channel group. */
-			cg = sr_channel_group_new(sdi, channel_name, NULL);
+			cg = g_malloc0(sizeof(struct sr_channel_group));
+			cg->name = g_strdup(channel_name);
 			cg->channels = g_slist_append(NULL, ch);
+			sdi->channel_groups = g_slist_append(sdi->channel_groups, cg);
 		}
 
 		devc->samplerates = samplerates;
 		devc->num_samplerates = ARRAY_SIZE(samplerates);
 		if (!(prof->dev_caps & DEV_CAPS_FX3))
 			devc->num_samplerates -= NUM_FX3_RATES;
-		has_firmware = usb_match_manuf_prod(devlist[i],
-				"sigrok", "fx2lafw");
+		has_firmware =
+			usb_match_manuf_prod(devlist[i], "sigrok", "fx2lafw") |
+			usb_match_manuf_prod(devlist[i], "sigrok", "fx3lafw");
 
 		if (has_firmware) {
 			/* Already has the firmware, so fix the new address. */
