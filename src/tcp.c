@@ -84,7 +84,7 @@ SR_PRIV gboolean sr_fd_is_readable(int fd)
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = fd;
 	fds[0].events = POLLIN;
-	ret = poll(fds, ARRAY_SIZE(fds), -1);
+	ret = poll(fds, ARRAY_SIZE(fds), 0);
 	if (ret < 0)
 		return FALSE;
 	if (!ret)
@@ -150,10 +150,8 @@ SR_PRIV struct sr_tcp_dev_inst *sr_tcp_dev_inst_new(
 /**
  * Release a TCP communication instance.
  *
- * @param[in] host_addr The host name or IP address (a string).
- * @param[in] tcp_port The TCP port number.
- *
- * @return A @ref sr_tcp_dev_inst structure on success. #NULL otherwise.
+ * @param[in] tcp TCP connection instance to free. If NULL, the function will do
+ *                nothing.
  *
  * @since 6.0
  */
@@ -165,6 +163,7 @@ SR_PRIV void sr_tcp_dev_inst_free(struct sr_tcp_dev_inst *tcp)
 
 	(void)sr_tcp_disconnect(tcp);
 	g_free(tcp->host_addr);
+	g_free(tcp->tcp_port);
 	g_free(tcp);
 }
 

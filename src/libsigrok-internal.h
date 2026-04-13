@@ -2003,6 +2003,9 @@ SR_PRIV int sr_atof(const char *str, float *ret);
 SR_PRIV int sr_atod_ascii(const char *str, double *ret);
 SR_PRIV int sr_atod_ascii_digits(const char *str, double *ret, int *digits);
 SR_PRIV int sr_atof_ascii(const char *str, float *ret);
+SR_PRIV int sr_atof_ascii_digits(const char *str, float *ret, int *digits);
+
+SR_PRIV int sr_count_digits(const char *str, int *digits);
 
 SR_PRIV GString *sr_hexdump_new(const uint8_t *data, const size_t len);
 SR_PRIV void sr_hexdump_free(GString *s);
@@ -2557,6 +2560,16 @@ SR_PRIV gboolean sr_rs9lcd_packet_valid(const uint8_t *buf);
 SR_PRIV int sr_rs9lcd_parse(const uint8_t *buf, float *floatval,
 			    struct sr_datafeed_analog *analog, void *info);
 
+/*--- dmm/qm1578.c -----------------------------------------------------------*/
+
+#define DIGITECH_QM1578_PACKET_SIZE 15
+
+/* Dummy info struct. The parser does not use it. */
+struct qm1578_info { int dummy; };
+
+SR_PRIV gboolean sr_digitech_qm1578_packet_valid(const uint8_t *buf);
+SR_PRIV int sr_digitech_qm1578_parse(const uint8_t *buf, float *floatval,
+			     struct sr_datafeed_analog *analog, void *info);
 /*--- dmm/bm25x.c -----------------------------------------------------------*/
 
 #define BRYMEN_BM25X_PACKET_SIZE 15
