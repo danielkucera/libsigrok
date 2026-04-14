@@ -295,6 +295,10 @@ SR_PRIV void fx2lafw_abort_acquisition(struct dev_context *devc)
 {
 	int i;
 
+	if (devc->acq_aborted) {
+		return;
+	}
+
 	devc->acq_aborted = TRUE;
 
 	for (i = devc->num_transfers - 1; i >= 0; i--) {
