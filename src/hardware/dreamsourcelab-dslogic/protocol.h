@@ -44,7 +44,7 @@
 #define DSLOGIC_REQUIRED_VERSION_MAJOR	1
 
 /* 6 delay states of up to 256 clock ticks */
-#define MAX_SAMPLE_DELAY	(6 * 256)
+#define MAX_SAMPLE_DELAY	0xffff
 
 #define DSLOGIC_FPGA_FIRMWARE_5V "dreamsourcelab-dslogic-fpga-5v.fw"
 #define DSLOGIC_FPGA_FIRMWARE_3V3 "dreamsourcelab-dslogic-fpga-3v3.fw"
