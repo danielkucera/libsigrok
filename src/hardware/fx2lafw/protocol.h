@@ -48,7 +48,7 @@
 #define MAX_16BIT_SAMPLE_RATE	SR_MHZ(12)
 
 /* 6 delay states of up to 256 clock ticks */
-#define MAX_SAMPLE_DELAY	(6 * 256)
+#define MAX_SAMPLE_DELAY	0xffff
 
 #define DEV_CAPS_16BIT_POS	0
 #define DEV_CAPS_AX_ANALOG_POS	1
